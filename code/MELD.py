@@ -3,21 +3,10 @@
 Created on Mon Oct 19 15:21:45 2015
 
 @author: zhaoshiwen
+@email:  sz63@duke.edu
+
 """
 
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug 19 15:49:10 2015
-
-@author: zhaoshiwen
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug 18 13:23:36 2015
-
-@author: zhaoshiwen
-"""
 import numpy as np
 
 class MELD:
