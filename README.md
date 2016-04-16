@@ -35,7 +35,7 @@ descent algorithm.
 
 - `data` contains the simulated categorical data with *n =
 {50,100,200,500,1000}* observations.  The number of categorical
-`variables is *20*. Each categorical variable could take *4* different
+variables is *20*. Each categorical variable could take *4* different
 categories.
 
 - `code` contains the implementation of MELD and a python
