@@ -1,7 +1,3 @@
----
-header-includes:
-    - \usepackage{bm}
----
 
 # MELD
 
