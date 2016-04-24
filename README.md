@@ -1,3 +1,8 @@
+---
+header-includes:
+    - \usepackage{bm}
+---
+
 # MELD
 
 This repository contains a python package that implements _MELD_, a
