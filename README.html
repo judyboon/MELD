@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+</head>
+<body>
+<h1 id="meld">MELD</h1>
+<p>This repository contains a python package that implements <em>MELD</em>, a fast moment estimation method for generalized Dirichlet latent variable model. For the details of the method and the model, please see http://arxiv.org/abs/1603.05324.</p>
+<h1 id="introduction">Introduction</h1>
+<p>MELD stands for <em>M</em>oment <em>E</em>stimation for generalized <em>L</em>atent <em>D</em>irichlet variable models.</p>
+<h2 id="the-model">The model</h2>
+<p>The generalized latent Dirichlet variable model in MELD assumes the <span class="math inline">\(p\)</span> dimensional observation <span class="math inline">\(\boldsymbol{y}_i\)</span> is a mixture of <span class="math inline">\(k\)</span> latent components, with mixture weight denoted as a Dirichlet distributed latent variable <span class="math inline">\(\boldsymbol{x}_i\)</span>. This model is also known as a <em>mixed membership model</em>. In contrast to previous mixed membership models, the new model allows each coordinate of <span class="math inline">\(\boldsymbol{y}_i\)</span> to take different variable types, including categorical, continuous and integer-valued variables.</p>
+<h2 id="parameter-estimation">Parameter estimation</h2>
+<p>The parameter estimation method developed in MELD uses a moment method known as generalized method of moments (GMM). This method is in contrast to previous parameter estimation approaches such as MCMC or EM algorithms that require instantiations of latent variables. The new GMM approach does not require instantiations of latent variables. By encoding each coordinate of <span class="math inline">\(\boldsymbol{y}_i\)</span> by a dummy variable, our new approach calculates the <em>cross</em> moment matrices or tensors among variables, with latent variables effectively marginalized out. Parameter estimation is conducted using a fast coordinate descent algorithm.</p>
+<h1 id="about-the-folders">About the folders</h1>
+<ul>
+<li><p><code>data</code> contains the simulated categorical data with <span class="math inline">\(n =  \{50,100,200,500,1000\}\)</span> observations. The number of categorical variables is <span class="math inline">\(20\)</span>. Each categorical variable could take <span class="math inline">\(4\)</span> different categories.</p></li>
+<li><p><code>code</code> contains the implementation of MELD and a python script showing how to use MELD.</p></li>
+</ul>
+</body>
+</html>
