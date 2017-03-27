@@ -3,14 +3,15 @@
 Created on Mon Oct 19 15:21:45 2015
 
 @author: zhaoshiwen
-@email:  sz63@duke.edu
+@email:  zhaoshiwen520@gmail.com
 
 """
 
 import numpy as np
+import pdb
 
 class MELD:
-    def __init__(self, Y, Yt, k, Phi = np.array([])):
+    def __init__(self, Y, Yt, k):
         """
         Yt: the type of y_j
             0: categorical: levels are 0,1,2,...
@@ -20,10 +21,10 @@ class MELD:
         (p,n) = Y.shape
         self.p = p
         self.n = n
-        self.d = np.zeros(p)
+        self.d = np.zeros(p, dtype=np.int)
         for j in range(p):
             if Yt[j] == 0:
-                self.d[j] = np.amax(Y[j,:]) + 1
+                self.d[j] = int(np.amax(Y[j,:])) + 1
             else:
                 self.d[j] = 1
         self.k = k
@@ -42,27 +43,13 @@ class MELD:
             if Yt[j] == 0:
                 Y_j = np.zeros((n,self.d[j]))
                 for i in range(n):
-                    Y_j[i,Y[j,i]] = 1
+                    Y_j[i, int(Y[j,i])] = 1
                 self.Yd[j] = Y_j
-                self.Phi[j] = np.zeros((k,self.d[j]))
-                self.X[j] = np.zeros((k,self.d[j]))                      
-                if Phi.size != 0:
-                    for h in range(k):
-                        self.Phi[j][h,:] = Phi[j][h,:]
-                        self.X[j][h,:] = np.sqrt(self.Phi[j][h,:])
-                else:
-                    for h in range(k):
-                        self.Phi[j][h,:] = np.random.dirichlet([100.0]*self.d[j])
-                        self.X[j][h,:] = np.sqrt(self.Phi[j][h,:])
             else:
                 self.Yd[j] = np.copy(Y[j,:])
-                self.Phi[j] = np.zeros(k)
-                if Phi.size != 0:
-                    for h in range(k):
-                        self.Phi[j][h] = Phi[j][h]
 
-    def calM1(self): # initialize Phi
-        self._M1 = np.zeros(self.p,dtype=object)
+    def calM1(self):
+        self._M1 = np.zeros(self.p, dtype=object)
         for j in range(self.p):
             if self.Yt[j] == 0:
                 M1_j = np.zeros(self.d[j])
@@ -70,37 +57,32 @@ class MELD:
                     M1_j = M1_j + self.Yd[j][i,:]
                 M1_j = M1_j/self.n
                 self._M1[j] = M1_j
-#                for h in range(self.k):
-#                    self.Phi[j][h,:] = M1_j[:]
-#                    self.X[j][h,:] = np.sqrt(M1_j[:])
             else:
                 self._M1[j] = np.sum(self.Yd[j])/self.n
-                for h in range(self.k):
-                    self.Phi[j][h] = self._M1[j]
 
     def calM2(self):
         if not hasattr(self,'_M1'):
             self.calM1()
-        self._E2 = np.zeros((self.p,self.p),dtype=object)
-        self._M2 = np.zeros((self.p,self.p),dtype=object)
+        self._E2 = np.zeros((self.p, self.p), dtype=object)
+        self._M2 = np.zeros((self.p, self.p), dtype=object)
         for j1 in range(self.p):
             for j2 in range(self.p):
-                E2_j1j2 = np.dot(self.Yd[j1].transpose(),self.Yd[j2])/self.n
+                E2_j1j2 = np.dot(self.Yd[j1].transpose(), self.Yd[j2])/self.n
                 M2_j1j2 = E2_j1j2 - \
-                    self.alpha0/(self.alpha0+1)*self._outer(self._M1[j1],self._M1[j2])
+                    self.alpha0/(self.alpha0+1)*self._outer(self._M1[j1], self._M1[j2])
                 self._E2[j1,j2] = E2_j1j2
                 self._M2[j1,j2] = M2_j1j2
 
     def calM2_bar(self):
         if not hasattr(self, '_M2'):
             self.calM2()
-        self._M2_bar = np.zeros((self.p,self.p),dtype=object)
+        self._M2_bar = np.zeros((self.p, self.p), dtype=object)
         self._f2d = 0
         for j in range(self.p):
             for t in range(self.p):
                 if t != j:
                     M2_bar_jt = self._M2[j,t] - \
-                        np.dot(self.Phi[j].transpose()*self.lambda2,self.Phi[t])
+                        np.dot(self.Phi[j].transpose()*self.lambda2, self.Phi[t])
                     self._M2_bar[j,t] = M2_bar_jt
                     self._f2d = self._f2d + self.d[j]*self.d[t]
         self._f2d = self._f2d/2
@@ -108,11 +90,8 @@ class MELD:
     def calM3(self):
         if not hasattr(self, '_M2'):
             self.calM2_bar()
-        # self._E3 = np.zeros((self._p,self._p,self._p),dtype=object)
-        # this E3 stores the first two lines of M3 
-        self._M3 = np.zeros((self.p,self.p,self.p),dtype=object)
+        self._M3 = np.zeros((self.p, self.p, self.p),dtype=object)
         for j in range(self.p):
-            #print j
             mu_j = self._M1[j]
             for s in range(self.p):
                 if s != j:
@@ -121,7 +100,7 @@ class MELD:
                         if t != s and t != j:
                             mu_t = self._M1[t]
                             E3_jst = self._calE3(self.Yd[j],\
-                                self.Yd[s],self.Yd[t])
+                                self.Yd[s], self.Yd[t])
                             E3_jst = E3_jst - \
                                 self.alpha0/(self.alpha0+2)*(\
                                 self._calE3bbm(self.Yd[j],self.Yd[s],mu_t) + \
@@ -130,13 +109,13 @@ class MELD:
                             
                             M3_jst = E3_jst/self.n + \
                                 2*self.alpha0**2/(self.alpha0+1)/(self.alpha0+2)*\
-                                self._outer(mu_j,mu_s,mu_t)
+                                self._outer(mu_j, mu_s, mu_t)
                             self._M3[j,s,t] = M3_jst
 
     def calM3_bar(self):
         if not hasattr(self, '_M3'):
             self.calM3()
-        self._M3_bar = np.zeros((self.p,self.p,self.p),dtype=object)
+        self._M3_bar = np.zeros((self.p, self.p, self.p),dtype=object)
         self._f3d = 0
         for j in range(self.p):
             Phi_j = self.Phi[j]
@@ -147,19 +126,44 @@ class MELD:
                         if t != s and t != j:
                             Phi_t = self.Phi[t]
                             self._M3_bar[j,s,t] = self._mytensorprod(self.lambda3,\
-                                Phi_j,Phi_s,Phi_t)
+                                Phi_j, Phi_s, Phi_t)
                             self._M3_bar[j,s,t] = self._M3[j,s,t] - \
                                 self._M3_bar[j,s,t]
                             self._f3d = self._f3d + self.d[j]*self.d[s]*self.d[t]
         self._f3d = self._f3d/6
         self._f3d = self._f3d + self._f2d
-    
+
+
+    def initializePhi(self, Phi=np.array([])):
+        if not hasattr(self, '_M1'):
+            self.calM1()
+        for j in range(self.p):
+            if self.Yt[j] == 0:
+                self.Phi[j] = np.zeros((self.k, self.d[j]))
+                if Phi.size != 0:
+                    for h in range(self.k):
+                        self.Phi[j][h,:] = Phi[j][h,:]
+                else:
+                    for h in range(self.k):
+                        #self.Phi[j][h,:] = np.random.dirichlet([100.0]*self.d[j])
+                        self.Phi[j][h,:] = self._M1[j][:]
+
+            else:
+                self.Phi[j] = np.zeros(self.k)
+                if Phi.size != 0:
+                    for h in range(self.k):
+                        self.Phi[j][h] = Phi[j][h]
+                else:
+                     for h in range(self.k):
+                         self.Phi[j][h] = self._M1[j]
+        
+        
     def initializeWeight_M2(self):
-        self._W2 = np.zeros((self.p,self.p),dtype=object)
+        self._W2 = np.zeros((self.p, self.p), dtype=object)
         for j in range(self.p):
             for t in range(self.p):
                 if t != j:
-                    self._W2[j,t] = np.ones((self.d[j],self.d[t]))
+                    self._W2[j,t] = np.ones((self.d[j], self.d[t]))
                     if self.d[j] == 1 and self.d[t] == 1:
                         self._W2[j,t] = 1.0
                     elif self.d[j] == 1 or self.d[t] == 1:
@@ -169,20 +173,21 @@ class MELD:
     def initializeWeight_M3(self):
         if not hasattr(self,'_W2'):
             self.initializeWeight_M2()
-        self._W3 = np.zeros((self.p,self.p,self.p),dtype=object)
+        self._W3 = np.zeros((self.p, self.p, self.p),dtype=object)
         for j in range(self.p):
             for s in range(self.p):
                 if s != j:
                     for t in range(self.p):
                         if t!=s and t!=j:
-                            self._W3[j,s,t] = np.ones((self.d[j],self.d[s],self.d[t]))
+                            self._W3[j,s,t] = np.ones((self.d[j], self.d[s], self.d[t]))
     
     def updateWeight_M2(self):
         for j in range(self.p):
             for t in range(self.p):
                 if t != j:
-                    E2jt = (np.dot(self.Phi[j].transpose()*self.alpha,self.Phi[t]) + 
-                        self._outer(np.dot(self.Phi[j].transpose(),self.alpha),np.dot(self.Phi[t].transpose(),self.alpha)))
+                    E2jt = (np.dot(self.Phi[j].transpose()*self.alpha, self.Phi[t]) + 
+                        self._outer(np.dot(self.Phi[j].transpose(), self.alpha),
+                                    np.dot(self.Phi[t].transpose(),self.alpha)))
                     E2jt = E2jt**2
                     if self.d[j] == 1 and self.d[t] == 1:
                         self._W2[j,t] = np.sum(self.Phi[j]**2 
@@ -193,30 +198,33 @@ class MELD:
                         self._W2[j,t] = 1.0/self._W2[j,t]
                     elif self.d[j] == 1:
                         self._W2[j,t] = np.zeros(self.d[t])
-                        for c_t in range(int(self.d[t])):
+                        for c_t in range(self.d[t]):
                             self._W2[j,t][c_t] = np.sum(self.Phi[j]**2 
                                     * self.Phi[t][:,c_t]**2 * self.alpha)
                             self._W2[j,t][c_t] = (self._W2[j,t][c_t] + 
-                                np.dot(self.Phi[j]**2,self.alpha)*np.dot(self.Phi[t][:,c_t]**2,self.alpha))
+                                                  np.dot(self.Phi[j]**2,self.alpha)*
+                                                  np.dot(self.Phi[t][:,c_t]**2,self.alpha))
                         self._W2[j,t] = (self._W2[j,t] - E2jt)/self.alpha0/(self.alpha0+1)
                         self._W2[j,t] = 1.0/self._W2[j,t]
                     elif self.d[t] == 1:
                         self._W2[j,t] = np.zeros(self.d[j])
-                        for c_j in range(int(self.d[j])):
+                        for c_j in range(self.d[j]):
                             self._W2[j,t][c_j] = np.sum(self.Phi[j][:,c_j]**2 
                                     * self.Phi[t]**2 * self.alpha)
                             self._W2[j,t][c_j] = (self._W2[j,t][c_j] + 
-                                np.dot(self.Phi[j][:,c_j]**2,self.alpha)*np.dot(self.Phi[t]**2,self.alpha))
+                                                  np.dot(self.Phi[j][:,c_j]**2,self.alpha)*
+                                                  np.dot(self.Phi[t]**2,self.alpha))
                         self._W2[j,t] = (self._W2[j,t] - E2jt)/self.alpha0/(self.alpha0+1)
                         self._W2[j,t] = 1.0/self._W2[j,t]
                     else:
-                        self._W2[j,t] = np.zeros((self.d[j],self.d[t]))
-                        for c_j in range(int(self.d[j])):
-                            for c_t in range(int(self.d[t])):
+                        self._W2[j,t] = np.zeros((self.d[j], self.d[t]))
+                        for c_j in range(self.d[j]):
+                            for c_t in range(self.d[t]):
                                 self._W2[j,t][c_j,c_t] = np.sum(self.Phi[j][:,c_j]**2 
                                     * self.Phi[t][:,c_t]**2 * self.alpha)
                                 self._W2[j,t][c_j,c_t] = (self._W2[j,t][c_j,c_t] + 
-                                    np.dot(self.Phi[j][:,c_j]**2,self.alpha)*np.dot(self.Phi[t][:,c_t]**2,self.alpha))
+                                                          np.dot(self.Phi[j][:,c_j]**2,self.alpha)*
+                                                          np.dot(self.Phi[t][:,c_t]**2,self.alpha))
                         self._W2[j,t] = (self._W2[j,t] - E2jt)/self.alpha0/(self.alpha0+1)
                         self._W2[j,t] = 1.0/self._W2[j,t]
                     
@@ -252,9 +260,9 @@ class MELD:
                                 self._outer(mu_j,mu_s,mu_t) - self._mytensorprod(self.lambda3,\
                                 self.Phi[j],self.Phi[s],self.Phi[t])
                             E3jst = E3jst**2
-                            for cj in range(int(self.d[j])):
-                                for cs in range(int(self.d[s])):
-                                    for ct in range(int(self.d[t])):
+                            for cj in range(self.d[j]):
+                                for cs in range(self.d[s]):
+                                    for ct in range(self.d[t]):
                                         Phi3jst = \
                                             self._outer(self.Phi[j][:,cj]**2, self.Phi[s][:,cs]**2, self.Phi[t][:,ct]**2) + \
                                             self._outer(self.Phi[j][:,cj], self.Phi[s][:,cs]**2, self.Phi[t][:,ct]**2)*2*self.alpha0*mu_j[cj]/(self.alpha0+2) + \
@@ -275,7 +283,8 @@ class MELD:
                     
 
 
-    def estimatePhiGrad_M2(self,S, prt = False, step = 1.0):
+    def estimatePhiGrad_M2(self, S, prt = False, step = 1.0):
+        self.initializePhi()
         if not hasattr(self,'_M2_bar'):
             self.calM2_bar()
         if not hasattr(self,'_W2'):
@@ -291,10 +300,10 @@ class MELD:
                             
         iteration = S
         Q2 = [0]*(iteration)
-        PHI = np.zeros(iteration,dtype=object)
+        PHI = np.zeros(iteration, dtype=object)
         for ii in range(iteration):
             if prt:
-                print ii
+                print(ii)
     
             for h in range(k):
                 for j in range(p):
@@ -312,10 +321,7 @@ class MELD:
                     for t in sub_p:
                         if t != j:
                             phi_th = self.Phi[t][h,:] if self.Yt[t] == 0 else self.Phi[t][h]                                
-                            #a2_jh = a2_jh + np.dot(self._M2_bar[j,t], phi_th)
                             a2_jh = a2_jh + np.dot(self._M2_bar[j,t]*self._W2[j,t], phi_th)
-                            
-                            #b2_jh = b2_jh + np.sum(phi_th**2)
                             b2_jh = b2_jh + np.dot(self._W2[j,t],phi_th**2)
 
                     a2_jh = -2.0*self.lambda2[h] * a2_jh
@@ -326,7 +332,6 @@ class MELD:
                     e = step*0.5/b_jh
                     if self.Yt[j] == 0:                     
                         self.Phi[j][h,:] = self.Phi[j][h,:] - e*(a_jh + 2.0*b_jh*self.Phi[j][h,:])
-                        #print (a_jh + 2*b_jh*self.Phi[j][h,:])
                         self.Phi[j][h,:] = np.abs(self.Phi[j][h,:])/np.sum(np.abs(self.Phi[j][h,:]))
                     elif self.Yt[j] == 1:
                         self.Phi[j][h] = self.Phi[j][h] - e*(a_jh + 2.0*b_jh*self.Phi[j][h])
@@ -345,24 +350,21 @@ class MELD:
             
             PHI[ii] = np.zeros(p,dtype=object)
             diff = 0
-            #print j, id(self.Phi[50][0])
             for j in range(p):
                 if self.Yt[j] == 0:
-                    Phi_j = np.zeros((k,self.d[j]))
-                    Phi_j = np.copy(self.Phi[j][:,:])
+                    Phi_j = np.copy(self.Phi[j])
                     PHI[ii][j] = Phi_j
                 else:
-                    Phi_j = np.zeros(k)
-                    Phi_j[:] = self.Phi[j][:]
+                    Phi_j = np.copy(self.Phi[j][:])
                     PHI[ii][j] = Phi_j
                 if ii > 0:
                     diff = diff + np.sum((Phi_j - PHI[ii-1][j])**2)
                 for t in range(j+1,p):
                     Q2[ii] = Q2[ii] + np.sum((self._M2_bar[j,t])**2*self._W2[j,t])
             
-            if ii > 0:
-                if abs(Q2[ii] - Q2[ii-1])/self._f2d < 1e-5:
-                    return {'Q2': Q2, 'PHI': PHI, 'iter': ii}
+#            if ii > 0:
+#                if abs(Q2[ii] - Q2[ii-1])/self._f2d < 1e-5:
+#                    return {'Q2': Q2, 'PHI': PHI, 'iter': ii}
 
             step = step*beta
         
@@ -370,6 +372,7 @@ class MELD:
 
 
     def estimatePhiGrad_M2M3(self,S, prt = False, step = 1.0):
+        self.initializePhi()
         if not hasattr(self,'_M2_bar'):
             self.calM2_bar()
         if not hasattr(self,'_W2'):
@@ -394,7 +397,7 @@ class MELD:
         PHI = np.zeros(iteration,dtype=object)
         for ii in range(iteration):
             if prt :
-                print ii
+                print(ii)
     
             for h in range(k):                
                 for j in range(p):
@@ -408,7 +411,7 @@ class MELD:
                                 if s!=t and s!=j:
                                     phi_sh = self.Phi[s][h,:] if self.Yt[s] == 0 else self.Phi[s][h]
                                     self._M3_bar[j,t,s] = self._M3_bar[j,t,s] + \
-                                        self.lambda3[h]*self._outer(phi_jh,phi_th,phi_sh)                
+                                        self.lambda3[h]*self._outer(phi_jh,phi_th,phi_sh)
                 
                 
                 for j in range(p):
@@ -420,21 +423,14 @@ class MELD:
                     for t in p_sub1:
                         if t != j:
                             phi_th = self.Phi[t][h,:] if self.Yt[t] == 0 else self.Phi[t][h]
-                            a2_jh = a2_jh + np.dot(self._M2_bar[j,t]*self._W2[j,t], phi_th)                                    
-                            #a2_jh = a2_jh + np.dot(self._M2_bar[j,t], phi_th)
-                            #b2_jh = b2_jh + np.sum(phi_th**2)
+                            a2_jh = a2_jh + np.dot(self._M2_bar[j,t]*self._W2[j,t], phi_th)
                             b2_jh = b2_jh + np.dot(self._W2[j,t],phi_th**2)
-                    
                             p_sub2 = range(p)
                             for s in p_sub2:
                                 if s != t and s != j:
                                     phi_sh = self.Phi[s][h,:] if self.Yt[s] == 0 else self.Phi[s][h]
-                                    #a3_jh = a3_jh + self._M3phi1phi2(self._M3_bar[j,t,s],
-                                    #                                 phi_th,phi_sh)
                                     a3_jh = a3_jh + self._M3phi1phi2(self._M3_bar[j,t,s]*self._W3[j,t,s],
                                                                      phi_th,phi_sh)
-                                    #b3_jh = b3_jh + np.sum(phi_th**2)*\
-                                    #    np.sum(phi_sh**2)
                                     b3_jh = b3_jh + self._M3phi1phi2(self._W3[j,t,s],phi_th**2,phi_sh**2)
                     
             
@@ -458,7 +454,7 @@ class MELD:
                         self.Phi[j][h] = self.Phi[j][h] - e*(a_jh + 2*b_jh*self.Phi[j][h])
                         self.Phi[j][h] = np.abs(self.Phi[j][h])
                     
-                    # recover M2_bar and M3_bar
+                # recover M2_bar and M3_bar
                 for j in range(p):
                     phi_jh = self.Phi[j][h,:] if self.Yt[j] == 0 else self.Phi[j][h] 
                     for t in range(p):
@@ -475,21 +471,19 @@ class MELD:
             PHI[ii] = np.zeros(p,dtype=object)
             for j in range(p):
                 if self.Yt[j] == 0:
-                    Phi_j = np.zeros((k,self.d[j]))
-                    Phi_j = np.copy(self.Phi[j][:,:])
+                    Phi_j = np.copy(self.Phi[j])
                     PHI[ii][j] = Phi_j
                 else:
-                    Phi_j = np.zeros(k)
-                    Phi_j[:] = self.Phi[j][:]
+                    Phi_j = np.copy(self.Phi[j][:])
                     PHI[ii][j] = Phi_j
                 for t in range(j+1,p):
                     Q3[ii] = Q3[ii] + np.sum(self._M2_bar[j,t]**2*self._W2[j,t])
                     for s in range(t+1,p):
                         Q3[ii] = Q3[ii] + np.sum(self._M3_bar[j,t,s]**2*self._W3[j,t,s])
 
-            if ii > 1:
-                if abs(Q3[ii] - Q3[ii-1])/self._f3d < 1e-5:
-                    return {'Q3': Q3, 'PHI': PHI,'iter': ii}
+#            if ii > 1:
+#                if abs(Q3[ii] - Q3[ii-1])/self._f3d < 1e-5:
+#                    return {'Q3': Q3, 'PHI': PHI,'iter': ii}
             
             step = step * beta
             

@@ -3,10 +3,10 @@
 Created on Thu Apr 14 20:24:06 2016
 
 @author: zhaoshiwen
+@email: zhaoshiwen520@gmail.com
 """
 
 import numpy as np
-
 import MELD as MELD
 reload(MELD)
 
@@ -32,6 +32,9 @@ S = 100 # maximum number of iterations
 
 # create an object of MELD class
 myMELD = MELD.MELD(Y,Yt,k)
+
+# initialize component paramters Phi
+myMELD.initializePhi()
 
 # calculate second moment matrices
 myMELD.calM2()
