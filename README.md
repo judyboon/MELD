@@ -2,9 +2,9 @@
 # MELD
 
 This repository contains a python package that implements _MELD_, a
-fast moment estimation method for generalized Dirichlet latent
-variable model.  For the details of the method and the model, please
-see http://arxiv.org/abs/1603.05324.
+fast moment estimation method for generalized latent Dirichlet model.
+For the details of the method and the model, please see
+http://arxiv.org/abs/1603.05324.
 
 # Introduction
 
@@ -14,8 +14,8 @@ MELD stands for *M*oment *E*stimation for generalized *L*atent
 
 ## The model
 
-The generalized latent Dirichlet variable model in MELD assumes the
-*p* dimensional observation **_y_**<sub>_i_</sub> is a mixture of *k*
+The generalized latent Dirichlet model in MELD assumes the *p*
+dimensional observation **_y_**<sub>_i_</sub> is a mixture of *k*
 latent components, with mixture weight denoted as a Dirichlet
 distributed latent variable **_x_**<sub>_i_</sub>. This model is also
 known as a *mixed membership model*. In contrast to previous mixed
@@ -38,13 +38,17 @@ algorithm.
 
 # About the folders
 
+- `MELD` contains the implementation of the package.
+
+- `demo1.py` is a detailed demonstration script to show how to use the
+  package. It corresponds to the first categorical simulation study
+  with *p=20* in the archive paper.
+
 - `data` contains the simulated categorical data with *n =
 {50,100,200,500,1000}* observations.  The number of categorical
 variables is *20*. Each categorical variable could take *4* different
 categories.
 
-- `code` contains the implementation of MELD and a python
-script showing how to use MELD.
 
 
 
