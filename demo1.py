@@ -82,9 +82,7 @@ k = 3 # the number of components
 S = 100 # maximum number of iterations
 
 
-# ----------------------------------------------------------------
-# --------- Estimation using second moment matrices --------------
-# ----------------------------------------------------------------
+# --------- estimation using second moment matrices --------------
 
 # create an object of MELD class
 myMELD = MELD.MELD(Y,Yt,k)
@@ -114,9 +112,7 @@ plt.plot(ResultM2S1['Q2'])
 plt.show()
 
 
-# ----------------------------------------------------------------
-# --------- Estimation using second and third moments ------------
-# ----------------------------------------------------------------
+# --------- estimation using second and third moments ------------
 
 # create an object of MELD class
 myMELD = MELD.MELD(Y,Yt,k)
@@ -146,11 +142,44 @@ plt.plot(ResultM3S1['Q3'])
 plt.show()
 
 
-# ------------------------------
-# ------------------------------
-# --- analyze the results ------
-# ------------------------------
-# ------------------------------
 
-# plot convergence of objective function
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-------------------- Analyze the results ------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+
+# ------ calculate MSE using method described in the paper -------
+n = 1000
+PHI = np.loadtxt('data/CTp20PHI.txt')
+Y = np.loadtxt('data/CTp20Yn'+str(n)+'.txt')
+Y = Y.astype(int)
+M = np.loadtxt('data/CTp20Mn'+str(n)+'.txt')
+M = M.astype(int)
+Y_PHI = np.zeros((p,n,d))
+for j in range(p):
+    for i in range(n):
+        Y_PHI[j,i,:] = PHI[j*d:(j+1)*d, M[j,i]]
+
+Y_PHI_est = np.zeros((p,n,d))
+for j in range(p):
+    for i in range(n):
+        if len(ResultM2S1['PHI'][S-1][j][0,:]) < d:
+            Y_PHI_est[j,i,:] = myMELD._M1[j]
+        else:
+            mij = np.argmax(ResultM2S1['PHI'][S-1][j][:,Y[j,i]])
+            Y_PHI_est[j,i,:] = ResultM2S1['PHI'][S-1][j][mij,:]
+MSE = np.sum((Y_PHI - Y_PHI_est)**2)/p/d/n
+
+
+
+# ----------- plot of convergence of paramter estimation ---------
+
+j = 0 # choose a variable
+hh = 1 # fix a component
+phi_jh = np.zeros((d,S))
+for ss in range(S):
+    phi_jh[:,ss] = ResultM2S1['PHI'][ss][j][hh,:]
+plt.plot(np.transpose(phi_jh))
+plt.show()
 

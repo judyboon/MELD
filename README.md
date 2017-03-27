@@ -9,7 +9,7 @@ http://arxiv.org/abs/1603.05324.
 # Introduction
 
 MELD stands for *M*oment *E*stimation for generalized *L*atent
-*D*irichlet variable models.
+*D*irichlet models.
 
 
 ## The model
