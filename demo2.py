@@ -142,49 +142,6 @@ plt.show()
 
 
 
-# --------------- define the type of the variables ---------------
-# 0: categorical
-# 1: non-categorical with non-restrictive mean
-# 2: non-categorical with positive mean
-Yt = np.array([0]*p) 
-
-# --------------- define other variables for estimation ----------
-k = 3 # the number of components
-S = 100 # maximum number of iterations
-
-
-# --------- estimation using second moment matrices --------------
-
-# create an object of MELD class
-myMELD = MELD.MELD(Y,Yt,k)
-
-# initialize component paramters Phi
-myMELD.initializePhi()
-
-# calculate second moment matrices
-myMELD.calM2()
-myMELD.calM2_bar()
-
-# initialize weight matrices to identity
-myMELD.initializeWeight_M2()
-
-# start to perform first stage estimation
-# set prt to True to print iterations
-ResultM2S1 = myMELD.estimatePhiGrad_M2(S, prt=True)
-
-# recalculate weight matrix
-myMELD.updateWeight_M2()
-
-# start to perform second stage estimation
-ResultM2S2 = myMELD.estimatePhiGrad_M2(S, prt=True, step = 0.1)
-
-# look at the convergence of objective function
-plt.plot(ResultM2S1['Q2'])
-plt.show()
-
-
-
-
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
 #-------------------- Analyze the results ------------------------
